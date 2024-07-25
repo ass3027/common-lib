@@ -15,29 +15,53 @@ java {
 }
 
 
-jar {
-    archiveClassifier.set("")
-}
+jar { archiveClassifier.set("") }
 
-bootJar{
-    enabled = false
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId = "a.lsj.lib"
-            artifactId = "common-lib"
-            version = "1.0.0"
-
-            from components["java"]
-        }
-    }
-}
+bootJar{ enabled = false }
 
 repositories {
     mavenCentral()
 }
+
+publishing {
+    publications {
+        //noinspection GroovyAssignabilityCheck
+        mavenJava(MavenPublication) {
+            //noinspection GroovyAssignabilityCheck
+            groupId = "a.lsj.lib"
+            //noinspection GroovyAssignabilityCheck
+            artifactId = "common-lib"
+            //noinspection GroovyAssignabilityCheck
+            version = "1.0.0"
+
+            //noinspection GroovyAssignabilityCheck
+            from components["java"]
+        }
+
+        //noinspection GroovyAssignabilityCheck
+        library(MavenPublication){
+            //noinspection GroovyAssignabilityCheck
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            url "http://gitlab.gb-hemp.kr:8888/api/v4/projects/${System.getenv('CI_PROJECT_ID')}/packages/maven"
+            allowInsecureProtocol = true
+            //noinspection GroovyAssignabilityCheck
+            credentials(HttpHeaderCredentials) {
+                name = "Deploy-Token"
+                value = System.getenv("CI_TOKEN")
+            }
+            authentication {
+                //noinspection GroovyAssignabilityCheck
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}
+
 
 dependencies {
     api 'io.jsonwebtoken:jjwt-api:0.12.6'
