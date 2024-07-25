@@ -1,0 +1,8 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "publish" && $CI_PIPELINE_SOURCE == "push"
+
+deploy:
+  image: gradle:6.5-jdk11
+  script:
+    - 'gradle publish'
