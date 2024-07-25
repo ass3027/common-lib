@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "a.lsj.lib"
-version = "1.0.0"
+version = "1.0.1"
 
 java {
 //    withJavadocJar()
@@ -32,17 +32,17 @@ publishing {
             //noinspection GroovyAssignabilityCheck
             artifactId = "common-lib"
             //noinspection GroovyAssignabilityCheck
-            version = "1.0.0"
+            version = version
 
             //noinspection GroovyAssignabilityCheck
             from components["java"]
         }
 
-        //noinspection GroovyAssignabilityCheck
-        library(MavenPublication){
-            //noinspection GroovyAssignabilityCheck
-            from components.java
-        }
+//        //noinspection GroovyAssignabilityCheck
+//        library(MavenPublication){
+//            //noinspection GroovyAssignabilityCheck
+//            from components.java
+//        }
     }
 
     repositories {
