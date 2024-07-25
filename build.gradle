@@ -65,8 +65,8 @@ publishing {
 
 dependencies {
     api 'io.jsonwebtoken:jjwt-api:0.12.6'
-    api 'io.netty:netty-handler:4.1.91.Final'
-    api 'io.netty:netty-transport:4.1.91.Final'
+    api 'io.netty:netty-handler:4.1.100.Final'
+    api 'io.netty:netty-transport:4.1.100.Final'
     api 'io.projectreactor.netty:reactor-netty-http:1.1.21'
     implementation 'org.springframework:spring-context:5.3.37'
     implementation 'org.springframework:spring-web:5.3.27'
