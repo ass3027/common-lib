@@ -3,6 +3,6 @@ workflow:
     - if: $CI_COMMIT_BRANCH == "publish" && $CI_PIPELINE_SOURCE == "push"
 
 deploy:
-  image: gradle:6.5-jdk11
+  image: gradle:7.6.1-jdk11
   script:
     - 'gradle publish'
