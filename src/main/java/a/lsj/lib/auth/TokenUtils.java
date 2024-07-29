@@ -180,7 +180,7 @@ public class TokenUtils {
 	 */
 	private Claims getClaimsFormToken(String token) {
 		return getJwtParser()
-				.parseEncryptedClaims(token)
+				.parseSignedClaims(token)
 				.getPayload();
 	}
 
