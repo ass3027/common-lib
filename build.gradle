@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "a.lsj.lib"
-version = "1.0.1f"
+version = "1.0.2"
 
 java {
 //    withJavadocJar()
@@ -80,6 +80,9 @@ dependencies {
 
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    testImplementation 'org.springframework:spring-test:5.3.37'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
 
     compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
     compileOnly 'org.projectlombok:lombok'

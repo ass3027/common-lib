@@ -2,9 +2,9 @@ package a.lsj.lib.auth;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import javax.crypto.SecretKey;
 import java.util.*;
 
@@ -16,7 +16,6 @@ import java.util.*;
  * @since 2022.12.23
  */
 @SuppressWarnings("unused")
-@Slf4j
 @Component
 public class TokenUtils {
 
@@ -24,10 +23,9 @@ public class TokenUtils {
 	private String jwtSecretKey;
 
 	private SecretKey secretKey;
+	private JwtParser jwtParser;
 
 	private SecretKey getSecretKey(){
-		log.debug("jwtSecretKey : {}", jwtSecretKey);
-		log.debug("secretKey : {}", secretKey);
 		if(secretKey == null){
 			secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
 		}
@@ -45,7 +43,7 @@ public class TokenUtils {
 		// 사용자 시퀀스를 기준으로 JWT 토큰을 발급하여 반환해줍니다.
 		JwtBuilder builder = Jwts.builder()
 				.header()
-					.add(createHeader())// Header 구성
+				.add(createHeader())// Header 구성
 				.and()
 				.claims(createClaims(jwtTokenUser))                        // Payload - Claims 구성
 				.subject(String.valueOf(jwtTokenUser.getUserId()))         // Payload - Subject 구성
@@ -63,60 +61,6 @@ public class TokenUtils {
 	 */
 	public String generateJwtToken(JwtTokenUser jwtTokenUser) {
 		return generateJwtToken(jwtTokenUser, 0);
-	}
-
-
-	private JwtParser getJwtParser(){
-		return Jwts.parser()
-				.verifyWith(getSecretKey())
-				.build();
-	}
-	/**
-	 * 토큰을 기반으로 사용자 정보를 반환 해주는 메서드
-	 *
-	 * @param token String : 토큰
-	 * @return String : 사용자 정보
-	 */
-	public String parseTokenToUserInfo(String token) {
-		return getClaimsFormToken(token)
-				.getSubject();
-	}
-
-	/**
-	 * 유효한 토큰인지 확인 해주는 메서드
-	 *
-	 * @param token String  : 토큰
-	 * @return boolean      : 유효한지 여부 반환
-	 */
-	public boolean hasClaim(String token) {
-		try {
-			Claims claims = getClaimsFormToken(token);
-
-			log.debug("expireTime :" + claims.getExpiration());
-			log.debug("userId :" + claims.get("userId"));
-			log.debug("userNm :" + claims.get("userNm"));
-
-			return true;
-		} catch (ExpiredJwtException exception) {
-			log.warn("Token Expired");
-			return false;
-		} catch (JwtException exception) {
-			log.warn("Token Tampered");
-			return false;
-		} catch (NullPointerException exception) {
-			log.warn("Token is null");
-			return false;
-		}
-	}
-
-	/**
-	 * Header 내에 토큰을 추출합니다.
-	 *
-	 * @param header 헤더
-	 * @return String
-	 */
-	public String getTokenFromHeader(String header) {
-		return header.split(" ")[1];
 	}
 
 	/**
@@ -161,16 +105,31 @@ public class TokenUtils {
 		// 공개 클레임에 사용자의 이름과 이메일을 설정하여 정보를 조회할 수 있다.
 		Map<String, Object> claims = new HashMap<>();
 
-		log.debug("userId :" + jwtTokenUser.getUserId());
-		log.debug("userNm :" + jwtTokenUser.getUserNm());
-		log.debug("authCd :" + jwtTokenUser.getAuthCd());
-
 		claims.put("userId", jwtTokenUser.getUserId());
 		claims.put("userNm", jwtTokenUser.getUserNm());
 		claims.put("authCd", jwtTokenUser.getAuthCd());
 		return claims;
 	}
 
+	public long getExpireTimeFromToken(String token) {
+		Claims claims = getClaimsFromToken(token);
+		final Date expiration = claims.getExpiration();
+
+		if (expiration == null) return 1000;
+		return expiration.getTime();
+	}
+
+	public Auth getAuthFromHeader(String header){
+		return getAuthFromToken(getTokenFromHeader(header));
+	}
+
+	public Auth getAuthFromToken(String token){
+		Claims claims = getClaimsFromToken(token);
+		return Auth.builder()
+				.id(claims.getSubject())
+				.role(claims.get("authCd").toString())
+				.build();
+	}
 
 	/**
 	 * 토큰 정보를 기반으로 Claims 정보를 반환받는 메서드
@@ -178,33 +137,47 @@ public class TokenUtils {
 	 * @param token : 토큰
 	 * @return Claims : Claims
 	 */
-	private Claims getClaimsFormToken(String token) {
+	private Claims getClaimsFromToken(String token) {
 		return getJwtParser()
 				.parseSignedClaims(token)
 				.getPayload();
 	}
 
+	private JwtParser getJwtParser(){
+		if(jwtParser == null){
+			jwtParser = Jwts.parser()
+					.verifyWith(getSecretKey())
+					.build();
+		}
+		return jwtParser;
+	}
 	/**
-	 * 토큰을 기반으로 사용자 정보를 반환받는 메서드
+	 * 토큰을 기반으로 사용자 정보를 반환 해주는 메서드
 	 *
-	 * @param token : 토큰
-	 * @return String : 사용자 아이디
+	 * @param token String : 토큰
+	 * @return String : 사용자 정보
 	 */
-	public String getUserIdFromToken(String token) {
-		Claims claims = getClaimsFormToken(token);
-		return claims.get("userId").toString();
+	public String parseTokenToUserInfo(String token) {
+		return getClaimsFromToken(token)
+				.getSubject();
 	}
 
-	public String getAuthCdFromToken(String token) {
-		Claims claims = getClaimsFormToken(token);
-		return claims.get("authCd").toString();
-	}
+	/**
+	 * Header 내에 토큰을 추출합니다.
+	 *
+	 * @param header 헤더
+	 * @return String
+	 */
+	public String getTokenFromHeader(String header) {
+		if(!StringUtils.hasLength(header))
+			throw new RuntimeException("header is empty");
 
-	public long getExpireTimeFromToken(String token) {
-		Claims claims = getClaimsFormToken(token);
-		final Date expiration = claims.getExpiration();
-		if (expiration == null) return 1000;
-		return expiration.getTime();
+		String result = header.split(" ")[1];
+
+		if(!StringUtils.hasText(result))
+			throw new RuntimeException("token is empty");
+
+		return result;
 	}
 
 }
