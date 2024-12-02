@@ -1,4 +1,4 @@
-package kr.lsj.common.lib.cmm.enums.converter;
+package kr.lsj.common.lib.enums.converter;
 
 
 import lombok.RequiredArgsConstructor;
