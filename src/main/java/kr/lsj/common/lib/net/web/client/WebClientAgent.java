@@ -42,6 +42,23 @@ public class WebClientAgent<T, P> {
 		this.webClient = getWebClient(_baseurl, _timeoutSeconds);
 	}
 
+	private WebClient getWebClient(String _baseUrl, int _timeoutSeconds) {
+		HttpClient httpClient = HttpClient.create()
+				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, _timeoutSeconds * 1000)
+				.doOnConnected(conn -> conn
+						.addHandlerLast(new ReadTimeoutHandler(_timeoutSeconds))
+						.addHandlerLast(new WriteTimeoutHandler(_timeoutSeconds))
+				);
+
+		ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+
+		return WebClient.builder()
+				.baseUrl(_baseUrl)
+				.clientConnector(connector)
+				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.build();
+	}
+
 
 	public Flux<?> getRequestFlux(String _uri, T resBodyType) {
 		return webClient.get()
@@ -90,26 +107,6 @@ public class WebClientAgent<T, P> {
 				.uri(_uri)
 				.retrieve()
 				.bodyToFlux(Void.class);
-	}
-
-
-
-
-	private WebClient getWebClient(String _baseUrl, int _timeoutSeconds) {
-		HttpClient httpClient = HttpClient.create()
-				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, _timeoutSeconds*1000)
-				.doOnConnected(conn ->
-						conn.addHandlerLast(new ReadTimeoutHandler(_timeoutSeconds))
-							.addHandlerLast(new WriteTimeoutHandler(_timeoutSeconds))
-				);
-
-		ClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-
-		return WebClient.builder()
-				.baseUrl(_baseUrl)
-				.clientConnector(connector)
-				.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-				.build();
 	}
 
 }
